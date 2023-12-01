@@ -1,0 +1,74 @@
+[
+    {
+        "1": "/people/person/place_of_birth",
+        "2": "/business/company/advisors",
+        "3": "/sports/sports_team_location/teams",
+        "4": "/business/person/company",
+        "5": "/location/neighborhood/neighborhood_of",
+        "6": "/people/person/children",
+        "7": "/people/person/nationality",
+        "8": "/location/country/administrative_divisions",
+        "9": "/people/deceased_person/place_of_death",
+        "10": "/location/location/contains",
+        "11": "/location/country/capital",
+        "12": "/people/ethnicity/people",
+        "13": "/people/person/place_lived",
+        "14": "/location/administrative_division/country",
+        "15": "/sports/sports_team/location",
+        "16": "/people/ethnicity/geographic_distribution",
+        "17": "/business/company/place_founded",
+        "18": "/business/company/industry",
+        "19": "/business/company/major_shareholders",
+        "20": "/business/company/founders",
+        "21": "/business/company_shareholder/major_shareholder_of",
+        "22": "/people/person/ethnicity",
+        "23": "/people/person/religion",
+        "24": "/people/person/profession"
+    },
+    {
+        "/people/person/place_of_birth": 1,
+        "/business/company/advisors": 2,
+        "/sports/sports_team_location/teams": 3,
+        "/business/person/company": 4,
+        "/location/neighborhood/neighborhood_of": 5,
+        "/people/person/children": 6,
+        "/people/person/nationality": 7,
+        "/location/country/administrative_divisions": 8,
+        "/people/deceased_person/place_of_death": 9,
+        "/location/location/contains": 10,
+        "/location/country/capital": 11,
+        "/people/ethnicity/people": 12,
+        "/people/person/place_lived": 13,
+        "/location/administrative_division/country": 14,
+        "/sports/sports_team/location": 15,
+        "/people/ethnicity/geographic_distribution": 16,
+        "/business/company/place_founded": 17,
+        "/business/company/industry": 18,
+        "/business/company/major_shareholders": 19,
+        "/business/company/founders": 20,
+        "/business/company_shareholder/major_shareholder_of": 21,
+        "/people/person/ethnicity": 22,
+        "/people/person/religion": 23,
+        "/people/person/profession": 24
+    },
+    {
+        "1": "PERSON",
+        "2": "ORGANIZATION",
+        "3": "LOCATION"
+    },
+    {
+        "PERSON": 1,
+        "ORGANIZATION": 2,
+        "LOCATION": 3
+    },
+    {
+        "1": "PERSON",
+        "2": "ORGANIZATION",
+        "3": "LOCATION"
+    },
+    {
+        "PERSON": 1,
+        "ORGANIZATION": 2,
+        "LOCATION": 3
+    }
+]
