@@ -18,10 +18,24 @@ from transformers import Trainer,TrainingArguments
 from typing import Any, Dict
 from transformers import DataCollator,DataCollatorWithPadding
 from dataset.build import *
+from torch.utils.data import random_split,DataLoader
+import torch_utils
 class RETrainer(Trainer):
     def __init__(self):
         super.__init__()
+        self.subj_criterion = nn.BCELoss(reduction='none')
+        self.obj_criterion = nn.CrossEntropyLoss(reduction='none')
+
     def compute_loss(self,model,inputs):#计算模型损失
+        subj_start_logits, subj_end_logits, obj_start_logits, obj_end_logits=model(inputs)
+        loss
+        # parameters = [p for p in model.parameters() if p.requires_grad]
+        # if opt['cuda']:# 是否使用cuda
+        #     model.cuda()
+        
+            # subj_criterion.cuda()
+            # obj_criterion.cuda()
+
         pass
 
 # class Data2Collator(DataCollator):
@@ -54,7 +68,7 @@ parser.add_argument('--type_loss_weight', type=float, default=1, help='Object lo
 parser.add_argument('--lr', type=float, default=1e-3)
 parser.add_argument('--lr_decay', type=float, default=0)
 parser.add_argument('--weight_decay', type=float, default=0, help='Applies to SGD and Adagrad.')
-parser.add_argument('--optim', type=str, default='adam', help='sgd, adagrad, adam or adamax.')
+parser.add_argument('--optim', type=str, default='adamw', help='sgd, adagrad, adam or adamax.')
 parser.add_argument('--num_epoch', type=int, default=50)
 parser.add_argument('--load_saved', type=str, default='')
 parser.add_argument('--batch_size', type=int, default=64)
@@ -75,7 +89,9 @@ parser.add_argument('--LocalModel',type=str,default="D:\\workstation\\NERWork\\R
 parser.add_argument('--resume',type=bool,default=False)
 parser.add_argument("--combine",type=bool,default=True)# 合并
 parser.add_argument('--load_method',type=str,default="local")
+parser.add_argument('--val_size',type=float,default=0.2)
 args = parser.parse_args()
+
 
 
 
@@ -93,10 +109,17 @@ from transformers import BertConfig,BertModel,BertTokenizer
 
 #以字典形式返回args
 opt = vars(args)
-import pickle
+if opt['gpu']:
+    device="cuda"
+else:
+    device='cpu'
+# import pickle
 from utils.loader import RE
 # load data
     # 分词器加载
+
+print("Loading data from {} with batch size {}...".format(opt['data_dir'],opt["batch_size"]))
+
 if opt['load_method']=="local":
     tokenizer=BertTokenizer.from_pretrained(opt["LocalModel"])
 else:
@@ -105,66 +128,26 @@ else:
 # 如果本地文件存在 则加载本地文件 否则
 reartype=".json"
 opt["datafiles"]=os.path.join(opt["dir"],"{}_{}{}".format(opt["dir"].split("\\")[-2],opt["LocalModel"].split('\\')[-1],reartype))
-# 判断数据文件是否生成 存在
+
 if os.path.exists(opt["datafiles"]):
     # 调用RE类加载模型
-    dataset=RE(data_path=opt['datafiles'],tokenizer=tokenizer)
+    dataset=RE(data_path=opt['datafiles'],tokenizer=tokenizer,device=device)
     # data=json.load()
 
 else:
     filename=build_data(opt,tokenizer)# 进行文件生成
     #调用 加载模型
-    dataset=RE(data_path=os.path.join(opt['dir'],filename),tokenizer=tokenizer)
-    # data=json.load(os.path.join(opt["dir"],"{}_{}".format(opt["dir"].split("\\")[-2],opt["LocalModel"].split('\\')[-1],reartype)))
+    dataset=RE(data_path=os.path.join(opt['dir'],filename),tokenizer=tokenizer,device=device)
 
+# 数据集划分
+val_size=int(len(dataset)*opt['val_size'])
+train_size=len(dataset)-int(len(dataset)*opt['val_size'])
 
-# DataLoader()
-train_data = json.load(open(opt['data_dir']+"/WebNLGtrain.json"))# json文件中读入
-dev_data = json.load(open(opt['data_dir'] + '/WebNLGdev.json'))
-test_data = json.load(open(opt["data_dir"]+'/WebNLGtest.json'))
-#设置验证集和测试集
-# 加载 实体类型和关系类型  # scheme文件包含数据集中的类型
-id2predicate, predicate2id, id2subj_type, subj_type2id, id2obj_type, obj_type2id = json.load(open(opt['data_dir'] + '/schemas.json')) #获得类型id与标签映射
+train_dataset, val_dataset = random_split(dataset, [train_size,val_size])
 
-id2predicate = {int(i):j for i,j in id2predicate.items()}
-# id2 获取id->词表映射
-#加载char2id
-# id2char, char2id, id2pos, pos2id = json.load(open(opt['vocab_dir'] + '/chars.json'))
-# 
-opt['num_class'] = len(id2predicate) #关系类别
-opt['num_subj_type'] = len(id2subj_type)
-opt['num_obj_type'] = len(id2obj_type)
-# 不适用 char、word、pos_size
-# opt['char_vocab_size'] = len(char2id)+2 #
-# opt['word_vocab_size'] = len(char2id)+2
-# opt['pos_size'] = len(id2pos)+2
-
-# 加载词表
-# vocab_file = opt['vocab_dir'] + '/vocab.pkl'
-# vocab = Vocab(vocab_file, load=True)
-
-# opt['word_vocab_size'] = vocab.size #词表大小
-# # npy是一种存储数组数据的二进制格式  
-# # embedding layer 用于GloVe词嵌入张量
-# emb_file = opt['vocab_dir'] + '/embedding.npy'# vocab --> emb_dim
-# emb_matrix = np.load(emb_file) #加载嵌入矩阵 
-# assert emb_matrix.shape[0] == vocab.size #
-# assert emb_matrix.shape[1] == opt['word_emb_dim']
-# word2id = vocab.word2id #英文单词到id的映射字典
-
-
-#初始化分词器 bert
-tokenizer=BertTokenizer.from_pretrained(opt["bertmodel"])
-# load data
-print("Loading data from {} with batch size {}...".format(opt['data_dir'],opt["batch_size"]))
-# tokenizer train_data 
-# from .utils.loader import RE
-
-train = RE(train_data, predicate2id, tokenizer, subj_type2id, obj_type2id)
-# exit()
-# dev_batch_size=len(dev_data)//(len(train_data)//opt["batch_size"])
-dev=RE(dev_data,predicate2id, tokenizer, subj_type2id, obj_type2id)
-tesds=RE(test_data,predicate2id,tokenizer,subj_type2id,obj_type2id,)
+# 创建数据集加载器
+train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
+val_loader = DataLoader(val_dataset, batch_size=32, shuffle=False)
 
 # model save
 model_id = opt['id'] if len(opt['id']) > 1 else '0' + opt['id']# 模型id
@@ -181,11 +164,15 @@ file_logger = helper.FileLogger(model_save_dir + '/' + opt['log'], header="# epo
 # print model info
 helper.print_config(opt)
 print(opt['num_class']) # 类别数量
-# model
-# init model
+# 
+# init model  
 model = RelationModel(opt)# embdlayer--> hiddensize 模型初始化
 # create trainer
 # Train Arguments
+# if opt['gpu']:
+model.to(device)
+
+
 training_args=TrainingArguments(
     output_dir=opt["save_dir"],
     num_train_epochs=opt['num_epoch'],
@@ -195,15 +182,20 @@ training_args=TrainingArguments(
     logging_dir=model_save_dir + '/' + opt['log'],
     save_steps=opt["save_epoch"],
     save_strategy="epoch",
-    evaluation_strategy='epoch'
+    evaluation_strategy='epoch',
+    device=device
 )
+# optimizer
+# 优化器 学习率优化器
+optimizer = torch_utils.get_optimizer(opt['optim'], model.parameters, opt['lr'], opt['weight_decay'])
 #  
 trainer=Trainer(
     model=model,
     args=training_args,
-    train_dataset=train,
-    eval_dataset=dev,
-    compute_metrics=Metric
+    train_dataset=train_loader.dataset,
+    eval_dataset=val_loader.dataset,
+    compute_metrics=Metric,
+    optimizers=optimizer
 )
 trainer.train()# 模型训练
 # 调用模型forward 进行模型评估

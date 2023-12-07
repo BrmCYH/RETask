@@ -215,12 +215,12 @@ class RE(Dataset):
                 with open(os.path.join(data_path,files),"r",encoding="utf-8")as f1:
                     itms=f1.readlines()
                     for i in itms:
-                        self.data.append[self.process(i).to(self.device) ]# 完成分词＋标签列表
+                        self.data.append[self.process(i)]# 完成分词＋标签列表
         elif os.path.isfile(data_path):
             with open(data_path,"r",encoding="utf-8")as f1:
                 itms = f1.readlines()
                 for i in itms:
-                    self.data.append[self.process(i).to(self.device)]
+                    self.data.append[self.process(i)]
         else:
             FileNotFoundError
 
@@ -232,7 +232,7 @@ class RE(Dataset):
     def process(self,itm):#
         # context: sequence triple [{e1typeid:[qi,zhi],e2_typeid:[qi,zhi],relaid:id_num]
         tokenized=self.tokenizer.encode(itm)# 返回 分词id
-        tokenized=seq_padding(tokenized,self.max_length)
+        tokenized=seq_padding(tokenized,self.max_length).to(self.device)
         subj_type = collections.defaultdict(list)
         obj_type = collections.defaultdict(list)
 
@@ -313,15 +313,16 @@ class RE(Dataset):
         # 将列表转换为PyTorch张量
         # sub 记录句子中的所有实体
 
-        sub=torch.stack(torch.tensor(s1),torch.tensor(s2))
+        sub1=torch.tensor(s1).to(self.device)
+        sub2=torch.tensor(s2).to(self.device)
         # sub2=torch.tensor(s2)
         # sub1，sub2标记每个实体 起始与结束
         # sb1_tensor = torch.tensor(sub1)
         # sb2_tensor = torch.tensor(sub2)
-        biaoji_tensor= torch.tensor(up)
+        biaoji_tensor= torch.tensor(up).to(self.device)
         # biaoji_tensor = torch.stack(sb1_tensor,sb2_tensor)
         # ob1_tensor 记录句子中实体1对应的副实体
-        ob1_tensor = torch.tensor(obj1)
+        ob1_tensor = torch.tensor(obj1).to(self.device)
 
         # 将多个张量合并为一个张量
         # tensor = torch.stack((sb1_tensor, ob1_tensor))
@@ -330,7 +331,7 @@ class RE(Dataset):
 
             # # shape of obj1_tensor [[[head label],[rear label]]*entities nums]
             # 通过biaoji张量对sub的内容进行针对提取 然后关系提取中使用对应的实体1与其他实体 进行判断
-        return tokenized,sub,biaoji_tensor,ob1_tensor
+        return tokenized,sub1,sub2,biaoji_tensor,ob1_tensor
     # tokenized=[[word token],[]]
     # sub = [[0,1,2....],[0,1,0,2,0..]] 所有左实体的起与止
     # biaoji =[[[0,1,0,0...],[0,1,0,0...]],[[0,0,1,0,0..],[0,0,0,1,0...]],[[head],[rear]]] 某个左实体的起始位置
@@ -512,12 +513,12 @@ class RE(Dataset):
         S2 = np.array(one[1][1])
         # 类型1、类型2、类型3等子层提取
 
-        bj1 = np.array(one[2])
-        bj2 = np.array(one[2])
+        bj = np.array(one[2])
+        # bj2 = np.array(one[2])
         # TS1 = np.array(seq_padding(one[7],self.Max_length))
         # TS2 = np.array(seq_padding(one[8],self.Max_length))
-        TO1 = np.array(one[3])
-        TO2 = np.array(one[3])
+        TO = np.array(one[3])
+        # TO2 = np.array(one[3])
         
         # Pos_tags = np.array(seq_padding(batch[12])) #  词性序列 填充
         # Distance_to_subj = np.array(seq_padding(one[1],self.Max_length))   # distance_to_subj  [token_length -x ,+len-x]
@@ -534,7 +535,7 @@ class RE(Dataset):
         # bj1与T 得到 To1
         # bj2与T 得到 To2
 
-        return (T, S1, S2,bj1,bj2,TO1, TO2)
+        return {"input":T,"Ehead": S1,"Eend": S2,"E1bj":bj,"O1":TO}
         # item (sentences,)
 
 
